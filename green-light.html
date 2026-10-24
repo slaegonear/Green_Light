@@ -495,82 +495,6 @@ function download(obj,filename){
  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
 }
 function safeFilename(s){return (String(s||'person').toLowerCase().replace(/[^a-z0-9_-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,30)||'person')}
-function {
- const root=document.getElementById('matches');
- if(!partner){root.innerHTML='<div class="empty">Import a share file to compare answers. Mutual Yes matches and discussion topics will appear here.</div>';return}
- const ownAnswers=state.answers;
- const partnerAnswers=partner.answers||{};
- const merged=new Map(state.items.map(i=>[i.id,i]));
- (partner.items||[]).forEach(i=>{if(!merged.has(i.id))merged.set(i.id,i)});
- const all=[...merged.values()];
- const comp = complementMap(all);
-
- const exactYes = all.filter(i=>ownAnswers[i.id]==='yes'&&partnerAnswers[i.id]==='yes');
- const exactYesIds = new Set(exactYes.map(i=>i.id));
-
- const compMatches = [];
- const usedComp = new Set();
- for(const i of all){
-   if(ownAnswers[i.id]!=='yes') continue;
-   const partners = comp.get(i.id);
-   if(!partners) continue;
-   for(const pid of partners){
-     if(partnerAnswers[pid]!=='yes') continue;
-     const key = [i.id, pid].sort().join('|');
-     if(usedComp.has(key)) continue;
-     if(exactYesIds.has(i.id) && exactYesIds.has(pid)) continue;
-     usedComp.add(key);
-     const other = merged.get(pid);
-     compMatches.push({
-       text: i.text + '  ↔  ' + (other ? other.text : pid),
-       category: i.category,
-       note: 'Complementary match (give ↔ receive)'
-     });
-   }
- }
-
- const discussExact = all.filter(i=>{
-   const a=ownAnswers[i.id], b=partnerAnswers[i.id];
-   return a&&b&&(a==='maybe'||b==='maybe')&&!(a==='yes'&&b==='yes');
- });
- const discussComp = [];
- const usedDiscuss = new Set();
- for(const i of all){
-   const a = ownAnswers[i.id];
-   if(!a || (a!=='yes' && a!=='maybe')) continue;
-   const partners = comp.get(i.id);
-   if(!partners) continue;
-   for(const pid of partners){
-     const b = partnerAnswers[pid];
-     if(!b || (b!=='yes' && b!=='maybe')) continue;
-     if(a==='yes' && b==='yes') continue;
-     const key = [i.id, pid].sort().join('|');
-     if(usedDiscuss.has(key) || usedComp.has(key)) continue;
-     usedDiscuss.add(key);
-     const other = merged.get(pid);
-     discussComp.push({
-       text: i.text + '  ↔  ' + (other ? other.text : pid),
-       category: i.category,
-       note: 'Complementary — at least one Maybe'
-     });
-   }
- }
-
- const different=all.filter(i=>{
-   const a=ownAnswers[i.id]||'no', b=partnerAnswers[i.id]||'no'; // skipped = No
-   return (a==='yes'&&b==='no')||(a==='no'&&b==='yes');
- });
-
- const section=(title,items,cls,empty)=>`<section style="margin-top:14px"><h3>${title} <span class="pill">${items.length}</span></h3>${items.length?items.map(i=>`<div class="${cls}"><strong>${esc(i.text)}</strong><span class="muted">${esc(i.category||'')}</span>${i.note?`<div class="comp-note">${esc(i.note)}</div>`:''}</div>`).join(''):`<div class="empty">${empty}</div>`}</section>`;
- const showDifferent=document.getElementById('showDifferent').checked;
- const mutualItems = [...exactYes.map(i=>({text:i.text,category:i.category})), ...compMatches];
- const discussItems = [...discussExact.map(i=>({text:i.text,category:i.category})), ...discussComp];
- root.innerHTML=section('Mutual Yes',mutualItems,'match','No mutual Yes matches yet.')+
-   section('Worth discussing',discussItems,'match','No Maybe-related matches yet.')+
-   (showDifferent?section('Different answers',different.map(i=>({text:i.text,category:i.category})),'match','No Yes / No differences found.'):'');
- const who=partner.name||'the other person';
- setStatus(`Share file imported for ${who}. Exact matches and complementary give/receive pairs both count as Mutual Yes. Results never show who answered what.`,'partnerStatus');
-}
 document.getElementById('personName').addEventListener('change',e=>{state.name=e.target.value.trim();save();});
 document.getElementById('categoryFilter').addEventListener('change',render);
 document.getElementById('search').addEventListener('input',render);
@@ -622,22 +546,6 @@ document.getElementById('exportBtn').addEventListener('click',()=>{
  download(makeShare(),`green-light-share-${safeFilename(state.name)}.json`);
  setStatus('Share file downloaded. Share it only with your partner.','myProgress');
 });
-known.add(i.id)}});
-  if(Array.isArray(data.customComplements)){
-    if(!state.customComplements) state.customComplements=[];
-    const existing=new Set(state.customComplements.map(p=>[p[0],p[1]].sort().join('|').toLowerCase()));
-    data.customComplements.forEach(p=>{
-      if(!Array.isArray(p)||p.length<2) return;
-      const key=[String(p[0]),String(p[1])].sort().join('|').toLowerCase();
-      if(!existing.has(key)){state.customComplements.push([String(p[0]),String(p[1])]);existing.add(key);}
-    });
-  }
-  save();partner={name:String(data.name||'Partner'),items:data.items,answers:importedAnswers};
-  setStatus('Share file loaded. Match groups are ready.','partnerStatus');render();
- }catch(err){partner=null;setStatus('Could not import file: '+err.message,'partnerStatus');}
-});
-
-
 document.getElementById('backupBtn').addEventListener('click',()=>download({app:'Green Light personal backup',version:1,state},`green-light-backup-${safeFilename(state.name)}.json`));
 document.getElementById('resetBtn').addEventListener('click',()=>{
  if(confirm('Erase all Only Yes data saved in this browser, including your answers and custom topics? Export a backup first if you might want it later.')){
