@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#121a22">
+<title>Green Light</title>
+<style>
+:root{--ink:#e8eef4;--muted:#9aa8b8;--line:#2f3d4d;--paper:#1a2430;--bg:#121a22;--navy:#1e2d3d;--yes:#1a3d2e;--yesink:#7ddeb0;--maybe:#3d3420;--maybeink:#e0c45d;--no:#3d2020;--noink:#e5a2a2;--accent:#5a9fd4}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{background:#0d141c;color:white;padding:22px 16px;border-bottom:1px solid var(--line)}header .wrap,main{max-width:900px;margin:auto}h1{font-size:1.4rem;margin:0 0 5px;line-height:1.25}header p{margin:0;color:#a8b8c8}
+main{padding:16px;display:grid;gap:14px}.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 2px 12px #00000040}
+h3{font-size:1rem;margin:0 0 8px}.muted{color:var(--muted);font-size:.92rem}.small{font-size:.84rem}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row>*{flex:1 1 auto}
+button,select,input{font:inherit}button{border:1px solid var(--line);border-radius:9px;background:#243447;padding:9px 12px;cursor:pointer;color:var(--ink)}button:hover{filter:brightness(.97)}button.primary{background:#3d6a94;color:white;border-color:#3d6a94}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #5a9fd4;outline-offset:2px}
+input,select{border:1px solid var(--line);border-radius:9px;padding:10px;background:#121a22;color:var(--ink);min-width:0;width:100%}label{font-size:.88rem;font-weight:650;display:block;margin-bottom:5px}.field{flex:1 1 180px}
+.status{padding:10px 12px;border-radius:9px;background:#1e2d3d;color:var(--ink);margin-top:10px;white-space:pre-wrap}.status:empty{display:none}
+.item{padding:13px 0;border-top:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center}.item:first-child{border-top:0}.item-name{font-weight:650}.choices{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}.choice{padding:7px 9px;font-size:.88rem}.choice[aria-pressed="true"].yes{background:var(--yes);color:var(--yesink);border-color:#3d8f6a}.choice[aria-pressed="true"].maybe{background:var(--maybe);color:var(--maybeink);border-color:#a89040}.choice[aria-pressed="true"].no{background:var(--no);color:var(--noink);border-color:#a06060}
+.category-block{margin-top:18px}.category-block:first-child{margin-top:0}.category-heading{font-size:1.02rem;font-weight:700;margin:0 0 4px;padding-bottom:6px;border-bottom:2px solid var(--line);color:var(--navy)}
+.match{padding:12px;border:1px solid #2a5c45;background:#152820;border-radius:10px;margin-top:8px}.match strong{display:block}.match .comp-note{font-size:.8rem;color:var(--muted);margin-top:2px}.empty{padding:16px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:10px}
+details{margin:0}details summary{cursor:pointer;font-weight:700;font-size:1.12rem;list-style:none;padding:2px 0}details summary::-webkit-details-marker{display:none}details summary::before{content:"▸ ";display:inline-block;transition:transform .15s;color:var(--navy)}details[open] summary::before{transform:rotate(90deg)}details > *:not(summary){margin-top:12px}
+#topicList details.category-block{border:1px solid var(--line);border-radius:10px;padding:0;margin-top:10px;background:var(--paper);overflow:hidden}
+#topicList details.category-block:first-child{margin-top:0}
+#topicList details.category-block > summary.category-heading{
+  font-size:1rem;margin:0;padding:11px 14px;
+  background:#243447;color:#c5d4e4;
+  border-bottom:1px solid var(--line);
+}
+#topicList details.category-block[open] > summary.category-heading{
+  margin-bottom:0;border-bottom:1px solid var(--line);
+}
+#topicList details.category-block > .item{padding-left:14px;padding-right:14px}
+#topicList details.category-block > .item:last-child{padding-bottom:4px}
+
+.item-name.umbrella{font-weight:700;color:#c5d4e4}
+.item-name.child{font-weight:500;padding-left:8px;border-left:3px solid var(--line)}
+.item.child-item{opacity:0.98}
+.item.parent-item{background:#1e2d3d;margin:14px -14px 0;padding:6px 14px;border-top:1px solid var(--line)}
+.danger{color:#8b2525}.pill{display:inline-block;background:#243447;padding:3px 8px;border-radius:999px;font-size:.8rem;color:var(--muted)}
+footer{max-width:900px;margin:auto;padding:0 16px 24px;color:var(--muted);font-size:.82rem}
+@media(max-width:600px){main{padding:10px}.card{padding:13px}.item{grid-template-columns:1fr}.choices{justify-content:flex-start}h1{font-size:1.2rem}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>Green Light</h1><p>Compare desires at your own pace. Each of you answers privately; when you exchange share files, you only see mutual Yes matches (and optional discussion items). Give/receive pairs count as matches when you fit together. You can skip any question — unanswered items are treated as No. Everything stays on your devices.</p></div></header>
+<main>
+<section class="card">
+<details open>
+<summary>Compare privately</summary>
+<p class="muted">Exchange share files. Import the other person's file here to see mutual Yes matches (including complementary give ↔ receive), topics worth discussing, and (optionally) different answers. Results never label which person gave which answer.</p>
+<div class="row">
+  <div class="field"><label for="partnerFile">Import the other person's share file (.json)</label><input id="partnerFile" type="file" accept=".json,application/json"></div>
+  <button id="clearPartner" type="button">Clear imported file</button>
+</div>
+<div id="partnerStatus" class="status" aria-live="polite"></div>
+<label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-weight:500"><input id="showDifferent" type="checkbox" style="width:auto"> Show different answers (including Yes / No differences)</label>
+<div id="matches" aria-live="polite"></div>
+</details>
+</section>
+
+<section class="card">
+<details open>
+<summary>Your Info</summary>
+<p class="muted">Choose answers for yourself. Your answers are saved in this browser on this device. Nothing is uploaded to a server.</p>
+<div class="row">
+  <div class="field"><label for="personName">Your label (optional)</label><input id="personName" maxlength="40" placeholder="e.g. Person A"></div>
+  <div class="field"><label for="categoryFilter">Filter category</label><select id="categoryFilter"><option value="all">All categories</option></select></div>
+  <div class="field"><label for="search">Search topics</label><input id="search" placeholder="Search…"></div>
+</div>
+<div class="row" style="margin-top:10px">
+  <button id="showAll" type="button">Show all topics</button>
+  <button id="showUnanswered" type="button">Show unanswered</button>
+  <button id="exportBtn" class="primary" type="button">Export share file</button>
+</div>
+<p class="muted small">The share file includes your answers (Yes, Maybe, and No). Complementary pairs (e.g. giving oral ↔ receiving oral) are matched automatically when one person wants to give and the other wants to receive. Skipped questions count as No in your share file and in comparisons.</p>
+<div id="myProgress" class="status" aria-live="polite"></div>
+</details>
+</section>
+
+<section class="card">
+<details>
+<summary>Add a topic</summary>
+<div class="row">
+  <div class="field"><label for="newCategorySelect">Category</label>
+    <select id="newCategorySelect"></select>
+  </div>
+  <div class="field" id="otherCategoryField" style="display:none">
+    <label for="newCategoryOther">Custom category name</label>
+    <input id="newCategoryOther" maxlength="60" placeholder="Type a new category">
+  </div>
+</div>
+<label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-weight:500">
+  <input id="pairMode" type="checkbox" style="width:auto"> This is a give / receive pair (two complementary topics)
+</label>
+<div id="singleTopicFields" class="row" style="margin-top:10px">
+  <div class="field"><label for="newTopic">Topic / question</label><input id="newTopic" maxlength="180" placeholder="Add a topic in your own words"></div>
+</div>
+<div id="pairTopicFields" class="row" style="margin-top:10px;display:none">
+  <div class="field"><label for="newTopicA">Side A (e.g. giving / sending)</label><input id="newTopicA" maxlength="180" placeholder="e.g. Sending a teasing photo"></div>
+  <div class="field"><label for="newTopicB">Side B (e.g. receiving)</label><input id="newTopicB" maxlength="180" placeholder="e.g. Receiving a teasing photo"></div>
+</div>
+<div class="row" style="margin-top:10px">
+  <button id="addTopic" class="primary" type="button">Add topic</button>
+</div>
+<p class="muted small">Custom topics (and any pairs you create) are included in your share file so the other person can answer them too. Pairs are matched automatically: if one of you says Yes to Side A and the other says Yes to Side B, it counts as a Mutual Yes.</p>
+</details>
+</section>
+
+<section class="card">
+<details open>
+<summary>Answer topics</summary>
+<p class="muted small">Some sections start with an umbrella question. Answer Yes or Maybe to unlock the specific options underneath. A No hides them so you do not have to go through every variation.</p>
+<div id="topicList"></div>
+</details>
+</section>
+
+
+
+<section class="card">
+<details>
+<summary>Privacy, backups, and reset</summary>
+<p class="muted">This is a local-first tool: answers stay in this browser's storage. Anyone who can use this browser profile may be able to open your list. The share file is readable and not encrypted — only share it with the person you intend to share with.</p>
+<div class="row">
+<button id="backupBtn" type="button">Download full personal backup</button>
+<button id="resetBtn" type="button" class="danger">Erase this device's saved data</button>
+</div>
+<p class="muted small">A full personal backup includes all your answers and custom topics. Keep it private unless you intend to reveal every answer.</p>
+</details>
+</section>
+</main>
+<footer>Made for two people to compare at their own pace. It is not a substitute for conversation or consent: a Yes here is only a conversation starter, and anyone can change their mind at any time.</footer>
+<script>
+(() => {
+'use strict';
+const STORAGE_KEY = 'onlyYesApp_v13';
+const STARTER = [
+['Communication & boundaries','Making a shared yes/maybe/no list and revisiting it',''],
+['Communication & boundaries','Using a traffic-light system (green/yellow/red) during scenes',''],
+['Communication & boundaries','Practicing the safeword / safe gesture so both people are comfortable using it',''],
+['Communication & boundaries','Checking in during sex (“How are you doing?”)',''],
+['Communication & boundaries','Aftercare that includes cuddling, water, and verbal reassurance',''],
+['Communication & boundaries','Aftercare that includes space / alone time if needed',''],
+['Communication & boundaries','Cuddling or being held after sex without it turning into another round',''],
+['Communication & boundaries','Either person initiating aftercare afterward',''],
+['Communication & boundaries','Debriefing the next day about what worked or didn’t',''],
+['Communication & boundaries','Writing hard limits that are never crossed',''],
+['Communication & boundaries','Having a “may try later” list separate from hard nos',''],
+['Communication & boundaries','Agreeing that any items that are not full or maybe matches will not be brought up',''],
+['Communication & boundaries','Talking about STI testing and safer-sex boundaries before new activities or partners',''],
+['Communication & boundaries','Talking about jealousy, security, and reassurance if third parties are ever involved',''],
+['Flirting & teasing','Sending flirty or suggestive texts during the day',''],
+['Flirting & teasing','Sexting as its own activity (not only as a lead-in to meeting up)',''],
+['Flirting & teasing','Complimenting each other in a sexual way',''],
+['Flirting & teasing','Non-sexual affection that still feels like desire (notes, touch, attention)',''],
+['Flirting & teasing','Dirty talk over text or voice note',''],
+['Flirting & teasing','Sharing a fantasy out loud with no expectation of acting on it',''],
+['Flirting & teasing','Describing what you want to do later',''],
+['Flirting & teasing','Sending a teasing photo (clothed or partially clothed)',''],
+['Flirting & teasing','Receiving a teasing photo (clothed or partially clothed)',''],
+['Flirting & teasing','Sending explicit photos or short videos',''],
+['Flirting & teasing','Receiving explicit photos or short videos',''],
+['Flirting & teasing','Picking lingerie or an outfit for each other',''],
+['Flirting & teasing','Dressing up / wearing something revealing on purpose',''],
+['Flirting & teasing','Light teasing / denial during the day (building anticipation)',''],
+['Flirting & teasing','Flirting or teasing in public while keeping it discreet',''],
+['Initiating','Taking turns being the one who starts sex',''],
+['Initiating','Direct verbal invitation (“I want you now”)',''],
+['Initiating','Non-verbal signal (look, touch, code word)',''],
+['Initiating','Scheduling sex in advance',''],
+['Initiating','Long seduction with lots of build-up',''],
+['Initiating','Quickie with little to no warm-up',''],
+['Initiating','Low-energy sex when one or both are tired (“I still want you”)',''],
+['Initiating','Waking the other person up for sex',''],
+['Initiating','Initiating after an argument (make-up sex)',''],
+['Initiating','Initiating in a non-bedroom room of the house',''],
+['Initiating','Surprise initiation (blindfold or restraints ready, etc.)',''],
+['Kissing, touch & basics','Long, slow make-out sessions',''],
+['Kissing, touch & basics','Kissing with tongue / deep kissing',''],
+['Kissing, touch & basics','Kissing neck, ears, collarbone',''],
+['Kissing, touch & basics','Massage as the main event (not only as a lead-in)',''],
+['Kissing, touch & basics','Full-body massage that leads into sex',''],
+['Kissing, touch & basics','Foot massage',''],
+['Kissing, touch & basics','Breast / chest focus (soft or intense, as preferred)',''],
+['Kissing, touch & basics','Being able to ask for less focus on a body part you’re self-conscious about',''],
+['Kissing, touch & basics','Mutual masturbation while watching each other',''],
+['Kissing, touch & basics','Giving a handjob / fingering with lots of focus',''],
+['Kissing, touch & basics','Receiving a handjob / fingering with lots of focus',''],
+['Kissing, touch & basics','Dirty talk during sex',''],
+['Kissing, touch & basics','Praise during sex (separate from dirty talk)',''],
+['Kissing, touch & basics','Giving clear verbal direction (“harder”, “slower”, “right there”)',''],
+['Kissing, touch & basics','Being given clear verbal direction',''],
+['Kissing, touch & basics','Sex with lights on',''],
+['Kissing, touch & basics','Sex in front of a mirror',''],
+['Kissing, touch & basics','Quickies',''],
+['Kissing, touch & basics','Slow sex / multiple rounds in one session',''],
+['Kissing, touch & basics','Morning sex',''],
+['Kissing, touch & basics','Sex while a little tipsy (if safe and agreed)',''],
+['Kissing, touch & basics','No sex while intoxicated (hard boundary)',''],
+['Kissing, touch & basics','Period sex',''],
+['Oral','Giving oral (cunnilingus or fellatio)',''],
+['Oral','Receiving oral',''],
+['Oral','69',''],
+['Oral','Oral to orgasm (giving)',''],
+['Oral','Oral to orgasm (receiving)',''],
+['Oral','More intense oral (deepthroat, face-sitting, rimming, feet, cum play, etc.)',''],
+['Oral','Deepthroating (giving)','More intense oral (deepthroat, face-sitting, rimming, feet, cum play, etc.)'],
+['Oral','Being deepthroated (receiving)','More intense oral (deepthroat, face-sitting, rimming, feet, cum play, etc.)'],
+['Oral','Face-sitting / smothering – sitting on partner','More intense oral (deepthroat, face-sitting, rimming, feet, cum play, etc.)'],
+['Oral','Face-sitting / smothering – being sat on','More intense oral (deepthroat, face-sitting, rimming, feet, cum play, etc.)'],
+['Oral','Ass play with tongue (rimming – giving)','More intense oral (deepthroat, face-sitting, rimming, feet, cum play, etc.)'],
+['Oral','Ass play with tongue (rimming – receiving)','More intense oral (deepthroat, face-sitting, rimming, feet, cum play, etc.)'],
+['Oral','Kissing or licking feet','More intense oral (deepthroat, face-sitting, rimming, feet, cum play, etc.)'],
+['Oral','Having your feet kissed or licked','More intense oral (deepthroat, face-sitting, rimming, feet, cum play, etc.)'],
+['Oral','Forced oral / “use my mouth” dynamic (consensual)','More intense oral (deepthroat, face-sitting, rimming, feet, cum play, etc.)'],
+['Oral','Swallowing cum / cum on face or body','More intense oral (deepthroat, face-sitting, rimming, feet, cum play, etc.)'],
+['Penetration & positions','Missionary with lots of eye contact and kissing',''],
+['Penetration & positions','Woman on top / riding',''],
+['Penetration & positions','Doggy style',''],
+['Penetration & positions','Prone bone',''],
+['Penetration & positions','Standing sex or against a wall',''],
+['Penetration & positions','Sex in the shower, on the floor, or on furniture',''],
+['Penetration & positions','Trying to make the other person squirt / prostate orgasm',''],
+['Penetration & positions','Creampie / internal cum',''],
+['Penetration & positions','Using feet during sex / footjob (giving)',''],
+['Penetration & positions','Footjob (receiving)',''],
+['Penetration & positions','Mostly giving pleasure while partner receives (service top / pillow princess dynamic)',''],
+['Penetration & positions','Anal, pegging, fisting, or more intense penetration',''],
+['Penetration & positions','Anal sex (giving)','Anal, pegging, fisting, or more intense penetration'],
+['Penetration & positions','Anal sex (receiving)','Anal, pegging, fisting, or more intense penetration'],
+['Penetration & positions','Pegging (strap-on on a man) – giving','Anal, pegging, fisting, or more intense penetration'],
+['Penetration & positions','Pegging (strap-on on a man) – receiving','Anal, pegging, fisting, or more intense penetration'],
+['Penetration & positions','Anal with toys / gradual','Anal, pegging, fisting, or more intense penetration'],
+['Penetration & positions','Double penetration with a toy','Anal, pegging, fisting, or more intense penetration'],
+['Penetration & positions','Fisting or extreme penetration (gradual)','Anal, pegging, fisting, or more intense penetration'],
+['Toys & accessories','Shopping for sex toys together',''],
+['Toys & accessories','Using a vibrator during sex',''],
+['Toys & accessories','Using a vibrator for solo play while the other watches',''],
+['Toys & accessories','Dildo or strap-on play',''],
+['Toys & accessories','Cock ring',''],
+['Toys & accessories','More intense toys (plugs, chastity, remote control, electro, sounding, etc.)',''],
+['Toys & accessories','Butt plugs (wearing)','More intense toys (plugs, chastity, remote control, electro, sounding, etc.)'],
+['Toys & accessories','Butt plugs (having partner wear)','More intense toys (plugs, chastity, remote control, electro, sounding, etc.)'],
+['Toys & accessories','Prostate massager','More intense toys (plugs, chastity, remote control, electro, sounding, etc.)'],
+['Toys & accessories','Nipple clamps or suction','More intense toys (plugs, chastity, remote control, electro, sounding, etc.)'],
+['Toys & accessories','Wearing a chastity cage','More intense toys (plugs, chastity, remote control, electro, sounding, etc.)'],
+['Toys & accessories','Keyholding / controlling a partner’s chastity cage','More intense toys (plugs, chastity, remote control, electro, sounding, etc.)'],
+['Toys & accessories','Controlling a remote toy on partner','More intense toys (plugs, chastity, remote control, electro, sounding, etc.)'],
+['Toys & accessories','Wearing a remote-controlled toy','More intense toys (plugs, chastity, remote control, electro, sounding, etc.)'],
+['Toys & accessories','Sex machine or thrusting toy','More intense toys (plugs, chastity, remote control, electro, sounding, etc.)'],
+['Toys & accessories','Electro play or sounding','More intense toys (plugs, chastity, remote control, electro, sounding, etc.)'],
+['Bondage & restraint','Bondage or restraint in general',''],
+['Bondage & restraint','Putting a blindfold on partner','Bondage or restraint in general'],
+['Bondage & restraint','Wearing a blindfold','Bondage or restraint in general'],
+['Bondage & restraint','Silk ties, soft cuffs, or ankle restraints','Bondage or restraint in general'],
+['Bondage & restraint','Being tied spread-eagle on the bed','Bondage or restraint in general'],
+['Bondage & restraint','Tying the other person spread-eagle','Bondage or restraint in general'],
+['Bondage & restraint','Hands tied behind back (giving or receiving)','Bondage or restraint in general'],
+['Bondage & restraint','Gag (ball gag, cloth, or hand) – giving','Bondage or restraint in general'],
+['Bondage & restraint','Being gagged','Bondage or restraint in general'],
+['Bondage & restraint','Putting a collar and leash on partner','Bondage or restraint in general'],
+['Bondage & restraint','Wearing a collar and leash','Bondage or restraint in general'],
+['Bondage & restraint','Full body rope / shibari-style (basic)','Bondage or restraint in general'],
+['Bondage & restraint','Suspension or mummification (advanced, needs skill)','Bondage or restraint in general'],
+['Bondage & restraint','Being left restrained alone for a short time (with safety plan)','Bondage or restraint in general'],
+['Sensation & impact','Light sensory play (ice, wax, tickle, scratching)',''],
+['Sensation & impact','Ice cubes or cold play on skin','Light sensory play (ice, wax, tickle, scratching)'],
+['Sensation & impact','Hot wax (low-temp / body-safe)','Light sensory play (ice, wax, tickle, scratching)'],
+['Sensation & impact','Feather / light tickle torment','Light sensory play (ice, wax, tickle, scratching)'],
+['Sensation & impact','Fingernails or light scratching','Light sensory play (ice, wax, tickle, scratching)'],
+['Sensation & impact','Impact play (spanking, flogging, caning, etc.)',''],
+['Sensation & impact','Spanking with hand (giving)','Impact play (spanking, flogging, caning, etc.)'],
+['Sensation & impact','Spanking with hand (receiving)','Impact play (spanking, flogging, caning, etc.)'],
+['Sensation & impact','Spanking with paddle, crop, or belt (giving)','Impact play (spanking, flogging, caning, etc.)'],
+['Sensation & impact','Spanking with paddle, crop, or belt (receiving)','Impact play (spanking, flogging, caning, etc.)'],
+['Sensation & impact','Flogging or whipping (giving)','Impact play (spanking, flogging, caning, etc.)'],
+['Sensation & impact','Flogging or whipping (receiving)','Impact play (spanking, flogging, caning, etc.)'],
+['Sensation & impact','Caning (giving)','Impact play (spanking, flogging, caning, etc.)'],
+['Sensation & impact','Caning (receiving)','Impact play (spanking, flogging, caning, etc.)'],
+['Sensation & impact','Hair pulling or face slapping (giving)','Impact play (spanking, flogging, caning, etc.)'],
+['Sensation & impact','Hair pulling or face slapping (receiving)','Impact play (spanking, flogging, caning, etc.)'],
+['Sensation & impact','Trampling (light or heavier)','Impact play (spanking, flogging, caning, etc.)'],
+['Sensation & impact','Higher-intensity sensation (choking, CBT, nipple torture, watersports, blood, needles)',''],
+['Sensation & impact','Choking / breath play (giving) – high risk, research required','Higher-intensity sensation (choking, CBT, nipple torture, watersports, blood, needles)'],
+['Sensation & impact','Choking / breath play (receiving) – high risk, research required','Higher-intensity sensation (choking, CBT, nipple torture, watersports, blood, needles)'],
+['Sensation & impact','Nipple torture (giving)','Higher-intensity sensation (choking, CBT, nipple torture, watersports, blood, needles)'],
+['Sensation & impact','Nipple torture (receiving)','Higher-intensity sensation (choking, CBT, nipple torture, watersports, blood, needles)'],
+['Sensation & impact','CBT (giving)','Higher-intensity sensation (choking, CBT, nipple torture, watersports, blood, needles)'],
+['Sensation & impact','CBT (receiving)','Higher-intensity sensation (choking, CBT, nipple torture, watersports, blood, needles)'],
+['Sensation & impact','Watersports (piss play)','Higher-intensity sensation (choking, CBT, nipple torture, watersports, blood, needles)'],
+['Sensation & impact','Blood play or needle play (high risk, experienced only)','Higher-intensity sensation (choking, CBT, nipple torture, watersports, blood, needles)'],
+['Power exchange & D/s','Light dominance / submission in the bedroom',''],
+['Power exchange & D/s','Using titles (Sir, Mistress, good girl, etc.)','Light dominance / submission in the bedroom'],
+['Power exchange & D/s','Giving orders during sex','Light dominance / submission in the bedroom'],
+['Power exchange & D/s','Receiving orders during sex','Light dominance / submission in the bedroom'],
+['Power exchange & D/s','Brat / playful resistance and being “tamed”','Light dominance / submission in the bedroom'],
+['Power exchange & D/s','Controlling partner’s orgasms / requiring permission','Light dominance / submission in the bedroom'],
+['Power exchange & D/s','Having orgasms controlled / asking permission to cum','Light dominance / submission in the bedroom'],
+['Power exchange & D/s','Orgasm denial for a set period','Light dominance / submission in the bedroom'],
+['Power exchange & D/s','Forced orgasm / overstimulation (giving)','Light dominance / submission in the bedroom'],
+['Power exchange & D/s','Forced orgasm / overstimulation (receiving)','Light dominance / submission in the bedroom'],
+['Power exchange & D/s','Deeper power exchange (protocols, collars, CNC, degradation, pet play)',''],
+['Power exchange & D/s','Service submission or protocols outside the bedroom','Deeper power exchange (protocols, collars, CNC, degradation, pet play)'],
+['Power exchange & D/s','24/7 or high-protocol dynamic (even part-time)','Deeper power exchange (protocols, collars, CNC, degradation, pet play)'],
+['Power exchange & D/s','Owner / property language and headspace','Deeper power exchange (protocols, collars, CNC, degradation, pet play)'],
+['Power exchange & D/s','Punishments (funishment or real)','Deeper power exchange (protocols, collars, CNC, degradation, pet play)'],
+['Power exchange & D/s','Collar worn in private or in public','Deeper power exchange (protocols, collars, CNC, degradation, pet play)'],
+['Power exchange & D/s','CNC (consensual non-consent) scenes with clear negotiation','Deeper power exchange (protocols, collars, CNC, degradation, pet play)'],
+['Power exchange & D/s','Verbal degradation / humiliation (giving)','Deeper power exchange (protocols, collars, CNC, degradation, pet play)'],
+['Power exchange & D/s','Verbal degradation / humiliation (receiving)','Deeper power exchange (protocols, collars, CNC, degradation, pet play)'],
+['Power exchange & D/s','Pet play as owner / handler','Deeper power exchange (protocols, collars, CNC, degradation, pet play)'],
+['Power exchange & D/s','Pet play as pet (puppy, kitten, etc.)','Deeper power exchange (protocols, collars, CNC, degradation, pet play)'],
+['Power exchange & D/s','Objectification / free-use (giving or receiving)','Deeper power exchange (protocols, collars, CNC, degradation, pet play)'],
+['Roleplay & fantasy','Roleplay or fantasy scenarios in general',''],
+['Roleplay & fantasy','Teacher / student or boss / employee','Roleplay or fantasy scenarios in general'],
+['Roleplay & fantasy','Stranger pickup (meet as if you don’t know each other)','Roleplay or fantasy scenarios in general'],
+['Roleplay & fantasy','Doctor / patient','Roleplay or fantasy scenarios in general'],
+['Roleplay & fantasy','Kidnap / capture fantasy (CNC-leaning)','Roleplay or fantasy scenarios in general'],
+['Roleplay & fantasy','Maid / servant or royalty / commoner','Roleplay or fantasy scenarios in general'],
+['Roleplay & fantasy','Monster / alien / non-human entity','Roleplay or fantasy scenarios in general'],
+['Roleplay & fantasy','Age-gap roleplay (adult characters only)','Roleplay or fantasy scenarios in general'],
+['Roleplay & fantasy','Cheating / cuckold fantasy (talk or roleplay only)','Roleplay or fantasy scenarios in general'],
+['Roleplay & fantasy','Filming yourselves (private video)','Roleplay or fantasy scenarios in general'],
+['Roleplay & fantasy','Watching porn or listening to audio erotica together and reenacting','Roleplay or fantasy scenarios in general'],
+['Roleplay & fantasy','Writing or reading erotica to each other','Roleplay or fantasy scenarios in general'],
+['Exhibition, voyeur & public','Exhibition, voyeurism, public risk, or third parties in general',''],
+['Exhibition, voyeur & public','Sex with risk of being seen (curtains, car, outdoors)','Exhibition, voyeurism, public risk, or third parties in general'],
+['Exhibition, voyeur & public','Being watched by a third person','Exhibition, voyeurism, public risk, or third parties in general'],
+['Exhibition, voyeur & public','Watching a partner with a third person present','Exhibition, voyeurism, public risk, or third parties in general'],
+['Exhibition, voyeur & public','Partner being with someone else while you watch (cuckold / hotwife)','Exhibition, voyeurism, public risk, or third parties in general'],
+['Exhibition, voyeur & public','Being with someone else while partner watches (cuckold / hotwife)','Exhibition, voyeurism, public risk, or third parties in general'],
+['Exhibition, voyeur & public','Threesome (discussion or actual)','Exhibition, voyeurism, public risk, or third parties in general'],
+['Exhibition, voyeur & public','Group sex / same-room swinging','Exhibition, voyeurism, public risk, or third parties in general'],
+['Exhibition, voyeur & public','Going to a sex club or lifestyle party as observers','Exhibition, voyeurism, public risk, or third parties in general'],
+['Exhibition, voyeur & public','Playing at a sex club or lifestyle party','Exhibition, voyeurism, public risk, or third parties in general'],
+['Exhibition, voyeur & public','Sharing photos or videos with a trusted third party','Exhibition, voyeurism, public risk, or third parties in general'],
+['Exhibition, voyeur & public','Public play at a dungeon or kink event','Exhibition, voyeurism, public risk, or third parties in general'],
+].map((x,i)=>({id:'starter_'+(i+1),category:x[0],text:x[1],parentText:x[2]||''}));
+(function resolveParents(){
+  const byText=new Map(STARTER.map(i=>[i.text,i.id]));
+  STARTER.forEach(i=>{i.parentId=i.parentText?byText.get(i.parentText)||null:null; delete i.parentText;});
+})();
+
+
+
+
+
+// Complementary pairs: if one person says Yes to one side and the other says Yes to the other, it counts as a match.
+const COMPLEMENT_PAIRS = [
+  ['Sending a teasing photo (clothed or partially clothed)', 'Receiving a teasing photo (clothed or partially clothed)'],
+  ['Sending explicit photos or short videos', 'Receiving explicit photos or short videos'],
+  ['Giving oral (cunnilingus or fellatio)', 'Receiving oral'],
+  ['Oral to orgasm (giving)', 'Oral to orgasm (receiving)'],
+  ['Deepthroating (giving)', 'Being deepthroated (receiving)'],
+  ['Face-sitting / smothering – sitting on partner', 'Face-sitting / smothering – being sat on'],
+  ['Ass play with tongue (rimming – giving)', 'Ass play with tongue (rimming – receiving)'],
+  ['Kissing or licking feet', 'Having your feet kissed or licked'],
+  ['Using feet during sex / footjob (giving)', 'Footjob (receiving)'],
+  ['Anal sex (giving)', 'Anal sex (receiving)'],
+  ['Pegging (strap-on on a man) – giving', 'Pegging (strap-on on a man) – receiving'],
+  ['Giving a handjob / fingering with lots of focus', 'Receiving a handjob / fingering with lots of focus'],
+  ['Giving clear verbal direction (“harder”, “slower”, “right there”)', 'Being given clear verbal direction'],
+  ['Putting a blindfold on partner', 'Wearing a blindfold'],
+  ['Being tied spread-eagle on the bed', 'Tying the other person spread-eagle'],
+  ['Gag (ball gag, cloth, or hand) – giving', 'Being gagged'],
+  ['Putting a collar and leash on partner', 'Wearing a collar and leash'],
+  ['Butt plugs (wearing)', 'Butt plugs (having partner wear)'],
+  ['Controlling a remote toy on partner', 'Wearing a remote-controlled toy'],
+  ['Wearing a chastity cage', 'Keyholding / controlling a partner’s chastity cage'],
+  ['Spanking with hand (giving)', 'Spanking with hand (receiving)'],
+  ['Spanking with paddle, crop, or belt (giving)', 'Spanking with paddle, crop, or belt (receiving)'],
+  ['Flogging or whipping (giving)', 'Flogging or whipping (receiving)'],
+  ['Caning (giving)', 'Caning (receiving)'],
+  ['Hair pulling or face slapping (giving)', 'Hair pulling or face slapping (receiving)'],
+  ['Choking / breath play (giving) – high risk, research required', 'Choking / breath play (receiving) – high risk, research required'],
+  ['Nipple torture (giving)', 'Nipple torture (receiving)'],
+  ['CBT (giving)', 'CBT (receiving)'],
+  ['Giving orders during sex', 'Receiving orders during sex'],
+  ['Controlling partner’s orgasms / requiring permission', 'Having orgasms controlled / asking permission to cum'],
+  ['Forced orgasm / overstimulation (giving)', 'Forced orgasm / overstimulation (receiving)'],
+  ['Verbal degradation / humiliation (giving)', 'Verbal degradation / humiliation (receiving)'],
+  ['Pet play as owner / handler', 'Pet play as pet (puppy, kitten, etc.)'],
+  ['Being watched by a third person', 'Watching a partner with a third person present'],
+  ['Partner being with someone else while you watch (cuckold / hotwife)', 'Being with someone else while partner watches (cuckold / hotwife)']
+];
+
+function complementMap(items){
+  const byText = new Map(items.map(i => [i.text, i.id]));
+  const map = new Map();
+  const allPairs = COMPLEMENT_PAIRS.concat(state.customComplements || []);
+  for(const [a,b] of allPairs){
+    const idA = byText.get(a), idB = byText.get(b);
+    if(!idA || !idB) continue;
+    if(!map.has(idA)) map.set(idA, new Set());
+    if(!map.has(idB)) map.set(idB, new Set());
+    map.get(idA).add(idB);
+    map.get(idB).add(idA);
+  }
+  return map;
+}
+
+let state = loadState();
+let partner = null;
+let filterUnanswered = false;
+function fresh(){return {version:1,name:'',items:STARTER.map(x=>({...x})),answers:{},customComplements:[]}}
+function loadState(){try{const s=JSON.parse(localStorage.getItem(STORAGE_KEY));if(s&&s.version===1&&Array.isArray(s.items)&&s.answers){if(!Array.isArray(s.customComplements))s.customComplements=[];return s;}}catch(e){}return fresh()}
+function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){setStatus('Could not save to this browser. Export a backup before closing this tab.','myProgress')}}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function norm(s){return String(s||'').trim().toLowerCase()}
+function setStatus(msg,id){document.getElementById(id).textContent=msg}
+function categories(){return [...new Set(state.items.map(i=>i.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b))}
+function refreshCategories(){
+ const sel=document.getElementById('categoryFilter'), old=sel.value;
+ sel.innerHTML='<option value="all">All categories</option>'+categories().map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+ if([...sel.options].some(o=>o.value===old))sel.value=old;
+ // Populate add-topic category select
+ const addSel=document.getElementById('newCategorySelect');
+ if(addSel){
+   const prev=addSel.value;
+   addSel.innerHTML=categories().map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')+'<option value="__other__">Other (type your own)</option>';
+   if([...addSel.options].some(o=>o.value===prev)) addSel.value=prev;
+   else addSel.selectedIndex=0;
+   toggleOtherCategory();
+ }
+}
+function toggleOtherCategory(){
+ const sel=document.getElementById('newCategorySelect');
+ const other=document.getElementById('otherCategoryField');
+ if(!sel||!other) return;
+ other.style.display=sel.value==='__other__'?'block':'none';
+}
+function render(){
+ refreshCategories();
+ document.getElementById('personName').value=state.name||'';
+ const cat=document.getElementById('categoryFilter').value, q=norm(document.getElementById('search').value);
+ const parentOk=i=>{
+   if(!i.parentId) return true;
+   const pa=state.answers[i.parentId];
+   return pa==='yes'||pa==='maybe';
+ };
+ const items=state.items.filter(i=>(cat==='all'||i.category===cat)&&(!q||norm(i.text).includes(q)||norm(i.category).includes(q))&&parentOk(i)&&(!filterUnanswered||!state.answers[i.id]));
+
+ const list=document.getElementById('topicList');
+ if(!items.length){list.innerHTML='<div class="empty">No topics match this view.</div>';}
+ else {
+  const groups = new Map();
+  items.forEach(i=>{
+    if(!groups.has(i.category)) groups.set(i.category, []);
+    groups.get(i.category).push(i);
+  });
+  // Preserve open state of category dropdowns across re-renders
+  const wasOpen = new Set();
+  const hadAny = list.querySelectorAll('details[data-cat]').length > 0;
+  list.querySelectorAll('details[data-cat]').forEach(d=>{ if(d.open) wasOpen.add(d.dataset.cat); });
+  let html = '';
+  let catIndex = 0;
+  for(const [category, catItems] of groups){
+    const answered = catItems.filter(i=>state.answers[i.id]).length;
+    // First load: only the first category open. After that: keep previous open state.
+    const shouldOpen = hadAny ? wasOpen.has(category) : (catIndex === 0);
+    catIndex++;
+    html += `<details class="category-block" data-cat="${esc(category)}"${shouldOpen?' open':''}>`;
+    html += `<summary class="category-heading">${esc(category)} <span class="pill">${answered}/${catItems.length}</span></summary>`;
+    html += catItems.map(i=>{
+      const a=state.answers[i.id]||'';
+      const isParent=state.items.some(c=>c.parentId===i.id);
+      const isChild=!!i.parentId;
+      const nameClass=isParent?'item-name umbrella':(isChild?'item-name child':'item-name');
+      const badge=isParent?' <span class="pill">unlocks more</span>':'';
+      return `<div class="item${isChild?' child-item':''}${isParent?' parent-item':''}"><div><div class="${nameClass}">${esc(i.text)}${badge}</div></div><div class="choices" role="group" aria-label="Answer for ${esc(i.text)}">
+      <button class="choice yes" data-id="${esc(i.id)}" data-answer="yes" aria-pressed="${a==='yes'}">Yes</button>
+      <button class="choice maybe" data-id="${esc(i.id)}" data-answer="maybe" aria-pressed="${a==='maybe'}">Maybe</button>
+      <button class="choice no" data-id="${esc(i.id)}" data-answer="no" aria-pressed="${a==='no'}">No</button>
+      <button class="choice" data-id="${esc(i.id)}" data-answer="" aria-pressed="${a===''}" title="Clear answer">Clear</button>
+      </div></div>`;
+    }).join('');
+    html += '</details>';
+  }
+  list.innerHTML = html;
+ }
+ list.querySelectorAll('button[data-id]').forEach(b=>b.addEventListener('click',()=>{
+   const id=b.dataset.id, ans=b.dataset.answer;
+   if(ans)state.answers[id]=ans;else delete state.answers[id];
+   // If this is a parent set to No or cleared, hide path: clear child answers
+   if(!ans || ans==='no'){
+     state.items.filter(i=>i.parentId===id).forEach(ch=>{ delete state.answers[ch.id]; });
+   }
+   save();render();renderMatches();
+ }));
+ const visible=state.items.filter(i=>{
+   if(!i.parentId) return true;
+   const pa=state.answers[i.parentId];
+   return pa==='yes'||pa==='maybe';
+ });
+ const answered=visible.filter(i=>state.answers[i.id]).length;
+ const yes=visible.filter(i=>state.answers[i.id]==='yes').length;
+ document.getElementById('myProgress').textContent=`${answered} of ${visible.length} visible topics answered · ${yes} Yes · (${state.items.length} total in list, sub-topics unlock after Yes/Maybe on their umbrella)`;
+}
+function makeShare(){
+ const answered={};
+ state.items.forEach(i=>{
+   const a=state.answers[i.id];
+   answered[i.id]=['yes','maybe','no'].includes(a)?a:'no'; // skipped = No
+ });
+ return {app:'Green Light',version:2,exportedAt:new Date().toISOString(),name:state.name||'Partner',items:state.items.map(i=>({id:i.id,category:i.category,text:i.text,parentId:i.parentId||null})),answers:answered,customComplements:state.customComplements||[]};
+}
+function download(obj,filename){
+ const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+}
+function safeFilename(s){return (String(s||'person').toLowerCase().replace(/[^a-z0-9_-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,30)||'person')}
+function renderMatches(){
+ const root=document.getElementById('matches');
+ if(!partner){root.innerHTML='<div class="empty">Import a share file to compare answers. Mutual Yes matches and discussion topics will appear here.</div>';return}
+ const ownAnswers=state.answers;
+ const partnerAnswers=partner.answers||{};
+ const merged=new Map(state.items.map(i=>[i.id,i]));
+ (partner.items||[]).forEach(i=>{if(!merged.has(i.id))merged.set(i.id,i)});
+ const all=[...merged.values()];
+ const comp = complementMap(all);
+
+ const exactYes = all.filter(i=>ownAnswers[i.id]==='yes'&&partnerAnswers[i.id]==='yes');
+ const exactYesIds = new Set(exactYes.map(i=>i.id));
+
+ const compMatches = [];
+ const usedComp = new Set();
+ for(const i of all){
+   if(ownAnswers[i.id]!=='yes') continue;
+   const partners = comp.get(i.id);
+   if(!partners) continue;
+   for(const pid of partners){
+     if(partnerAnswers[pid]!=='yes') continue;
+     const key = [i.id, pid].sort().join('|');
+     if(usedComp.has(key)) continue;
+     if(exactYesIds.has(i.id) && exactYesIds.has(pid)) continue;
+     usedComp.add(key);
+     const other = merged.get(pid);
+     compMatches.push({
+       text: i.text + '  ↔  ' + (other ? other.text : pid),
+       category: i.category,
+       note: 'Complementary match (give ↔ receive)'
+     });
+   }
+ }
+
+ const discussExact = all.filter(i=>{
+   const a=ownAnswers[i.id], b=partnerAnswers[i.id];
+   return a&&b&&(a==='maybe'||b==='maybe')&&!(a==='yes'&&b==='yes');
+ });
+ const discussComp = [];
+ const usedDiscuss = new Set();
+ for(const i of all){
+   const a = ownAnswers[i.id];
+   if(!a || (a!=='yes' && a!=='maybe')) continue;
+   const partners = comp.get(i.id);
+   if(!partners) continue;
+   for(const pid of partners){
+     const b = partnerAnswers[pid];
+     if(!b || (b!=='yes' && b!=='maybe')) continue;
+     if(a==='yes' && b==='yes') continue;
+     const key = [i.id, pid].sort().join('|');
+     if(usedDiscuss.has(key) || usedComp.has(key)) continue;
+     usedDiscuss.add(key);
+     const other = merged.get(pid);
+     discussComp.push({
+       text: i.text + '  ↔  ' + (other ? other.text : pid),
+       category: i.category,
+       note: 'Complementary — at least one Maybe'
+     });
+   }
+ }
+
+ const different=all.filter(i=>{
+   const a=ownAnswers[i.id]||'no', b=partnerAnswers[i.id]||'no'; // skipped = No
+   return (a==='yes'&&b==='no')||(a==='no'&&b==='yes');
+ });
+
+ const section=(title,items,cls,empty)=>`<section style="margin-top:14px"><h3>${title} <span class="pill">${items.length}</span></h3>${items.length?items.map(i=>`<div class="${cls}"><strong>${esc(i.text)}</strong><span class="muted">${esc(i.category||'')}</span>${i.note?`<div class="comp-note">${esc(i.note)}</div>`:''}</div>`).join(''):`<div class="empty">${empty}</div>`}</section>`;
+ const showDifferent=document.getElementById('showDifferent').checked;
+ const mutualItems = [...exactYes.map(i=>({text:i.text,category:i.category})), ...compMatches];
+ const discussItems = [...discussExact.map(i=>({text:i.text,category:i.category})), ...discussComp];
+ root.innerHTML=section('Mutual Yes',mutualItems,'match','No mutual Yes matches yet.')+
+   section('Worth discussing',discussItems,'match','No Maybe-related matches yet.')+
+   (showDifferent?section('Different answers',different.map(i=>({text:i.text,category:i.category})),'match','No Yes / No differences found.'):'');
+ const who=partner.name||'the other person';
+ setStatus(`Share file imported for ${who}. Exact matches and complementary give/receive pairs both count as Mutual Yes. Results never show who answered what.`,'partnerStatus');
+}
+document.getElementById('personName').addEventListener('change',e=>{state.name=e.target.value.trim();save();});
+document.getElementById('categoryFilter').addEventListener('change',render);
+document.getElementById('search').addEventListener('input',render);
+document.getElementById('showAll').addEventListener('click',()=>{filterUnanswered=false;render()});
+document.getElementById('showUnanswered').addEventListener('click',()=>{filterUnanswered=true;render()});
+document.getElementById('pairMode').addEventListener('change',()=>{
+ const on=document.getElementById('pairMode').checked;
+ document.getElementById('singleTopicFields').style.display=on?'none':'flex';
+ document.getElementById('pairTopicFields').style.display=on?'flex':'none';
+});
+document.getElementById('newCategorySelect').addEventListener('change', toggleOtherCategory);
+document.getElementById('addTopic').addEventListener('click',()=>{
+ const catSel=document.getElementById('newCategorySelect');
+ const category=(catSel.value==='__other__'
+   ? document.getElementById('newCategoryOther').value.trim()
+   : catSel.value.trim())||'My topics';
+ if(catSel.value==='__other__' && !document.getElementById('newCategoryOther').value.trim()){
+   alert('Enter a custom category name.');return;
+ }
+
+ const isPair=document.getElementById('pairMode').checked;
+ if(isPair){
+  const textA=document.getElementById('newTopicA').value.trim();
+  const textB=document.getElementById('newTopicB').value.trim();
+  if(!textA||!textB){alert('Enter both sides of the pair.');return}
+  if(norm(textA)===norm(textB)){alert('The two sides need different wording.');return}
+  if(state.items.some(i=>norm(i.text)===norm(textA)||norm(i.text)===norm(textB))){alert('One of those topics is already on your list.');return}
+  const idA='custom_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+  const idB='custom_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8)+'b';
+  state.items.push({id:idA,category,text:textA});
+  state.items.push({id:idB,category,text:textB});
+  if(!state.customComplements) state.customComplements=[];
+  state.customComplements.push([textA, textB]);
+  document.getElementById('newTopicA').value='';
+  document.getElementById('newTopicB').value='';
+  document.getElementById('pairMode').checked=false;
+  document.getElementById('singleTopicFields').style.display='flex';
+  document.getElementById('pairTopicFields').style.display='none';
+ } else {
+  const text=document.getElementById('newTopic').value.trim();
+  if(!text){alert('Enter a topic first.');return}
+  if(state.items.some(i=>norm(i.text)===norm(text))){alert('That topic is already on your list.');return}
+  state.items.push({id:'custom_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8),category,text});
+  document.getElementById('newTopic').value='';
+ }
+ save();render();renderMatches();
+});
+document.getElementById('exportBtn').addEventListener('click',()=>{
+ download(makeShare(),`green-light-share-${safeFilename(state.name)}.json`);
+ setStatus('Share file downloaded. Share it only with your partner.','myProgress');
+});
+document.getElementById('partnerFile').addEventListener('change',async e=>{
+ const file=e.target.files&&e.target.files[0];if(!file)return;
+ try{
+  const data=JSON.parse(await file.text());
+  const knownApp=data.app==='Green Light'||data.app==='Green Light';
+  const validV1=knownApp&&data.version===1&&Array.isArray(data.items)&&Array.isArray(data.yesIds);
+  const validV2=knownApp&&data.version===2&&Array.isArray(data.items)&&data.answers&&typeof data.answers==='object'&&!Array.isArray(data.answers);
+  if(!validV1&&!validV2)throw new Error('This does not look like a valid Green Light share file.');
+  const ids=new Set(data.items.map(i=>i.id));
+  let importedAnswers={};
+  if(validV1){if(data.yesIds.some(id=>!ids.has(id)))throw new Error('The share file has inconsistent topic IDs.');data.yesIds.forEach(id=>importedAnswers[id]='yes');}
+  else {for(const [id,answer] of Object.entries(data.answers)){if(!ids.has(id)||!['yes','maybe','no'].includes(answer))throw new Error('The share file has inconsistent answer data.');importedAnswers[id]=answer;}}
+  const known=new Set(state.items.map(i=>i.id));
+  data.items.forEach(i=>{if(i&&typeof i.id==='string'&&typeof i.text==='string'&&!known.has(i.id)){state.items.push({id:i.id,category:String(i.category||'Imported topics'),text:i.text,parentId:i.parentId||null});known.add(i.id)}});
+  if(Array.isArray(data.customComplements)){
+    if(!state.customComplements) state.customComplements=[];
+    const existing=new Set(state.customComplements.map(p=>[p[0],p[1]].sort().join('|').toLowerCase()));
+    data.customComplements.forEach(p=>{
+      if(!Array.isArray(p)||p.length<2) return;
+      const key=[String(p[0]),String(p[1])].sort().join('|').toLowerCase();
+      if(!existing.has(key)){state.customComplements.push([String(p[0]),String(p[1])]);existing.add(key);}
+    });
+  }
+  save();partner={name:String(data.name||'Partner'),items:data.items,answers:importedAnswers};
+  setStatus('Share file loaded. Match groups are ready.','partnerStatus');render();renderMatches();
+ }catch(err){partner=null;setStatus('Could not import file: '+err.message,'partnerStatus');renderMatches()}
+});
+document.getElementById('clearPartner').addEventListener('click',()=>{partner=null;document.getElementById('partnerFile').value='';setStatus('','partnerStatus');renderMatches()});
+document.getElementById('showDifferent').addEventListener('change',renderMatches);
+document.getElementById('backupBtn').addEventListener('click',()=>download({app:'Green Light personal backup',version:1,state},`green-light-backup-${safeFilename(state.name)}.json`));
+document.getElementById('resetBtn').addEventListener('click',()=>{
+ if(confirm('Erase all Only Yes data saved in this browser, including your answers and custom topics? Export a backup first if you might want it later.')){
+  localStorage.removeItem(STORAGE_KEY);state=fresh();partner=null;document.getElementById('partnerFile').value='';document.getElementById('search').value='';filterUnanswered=false;setStatus('','partnerStatus');render();renderMatches();
+ }
+});
+render();renderMatches();
+})();
+</script>
+</body>
+</html>
