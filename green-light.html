@@ -41,22 +41,8 @@ footer{max-width:900px;margin:auto;padding:0 16px 24px;color:var(--muted);font-s
 </style>
 </head>
 <body>
-<header><div class="wrap"><h1>Green Light</h1><p>Compare desires at your own pace. Each of you answers privately; when you exchange share files, you only see mutual Yes matches (and optional discussion items). Give/receive pairs count as matches when you fit together. You can skip any question — unanswered items are treated as No. Everything stays on your devices.</p></div></header>
+<header><div class="wrap"><h1>Green Light</h1><p>Compare desires at your own pace. Each of you answers privately; when you are both done, use the Compare page with both share files to see mutual Yes matches. Give/receive pairs count as matches when you fit together. You can skip any question — unanswered items are treated as No. Everything stays on your devices.</p></div></header>
 <main>
-<section class="card">
-<details open>
-<summary>Compare privately</summary>
-<p class="muted">Exchange share files. Import the other person's file here to see mutual Yes matches (including complementary give ↔ receive), topics worth discussing, and (optionally) different answers. Results never label which person gave which answer.</p>
-<div class="row">
-  <div class="field"><label for="partnerFile">Import the other person's share file (.json)</label><input id="partnerFile" type="file" accept=".json,application/json"></div>
-  <button id="clearPartner" type="button">Clear imported file</button>
-</div>
-<div id="partnerStatus" class="status" aria-live="polite"></div>
-<label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-weight:500"><input id="showDifferent" type="checkbox" style="width:auto"> Show different answers (including Yes / No differences)</label>
-<div id="matches" aria-live="polite"></div>
-</details>
-</section>
-
 <section class="card">
 <details open>
 <summary>Your Info</summary>
@@ -71,7 +57,7 @@ footer{max-width:900px;margin:auto;padding:0 16px 24px;color:var(--muted);font-s
   <button id="showUnanswered" type="button">Show unanswered</button>
   <button id="exportBtn" class="primary" type="button">Export share file</button>
 </div>
-<p class="muted small">The share file includes your answers (Yes, Maybe, and No). Complementary pairs (e.g. giving oral ↔ receiving oral) are matched automatically when one person wants to give and the other wants to receive. Skipped questions count as No in your share file and in comparisons.</p>
+<p class="muted small">The share file includes your answers (Yes, Maybe, and No). Complementary pairs (e.g. giving oral ↔ receiving oral) are matched automatically when one person wants to give and the other wants to receive. Skipped questions count as No in your share file. To compare, both of you export share files and open the <a href="./compare.html" style="color:#5a9fd4">Compare page</a>.</p>
 <div id="myProgress" class="status" aria-live="polite"></div>
 </details>
 </section>
@@ -127,7 +113,10 @@ footer{max-width:900px;margin:auto;padding:0 16px 24px;color:var(--muted);font-s
 </details>
 </section>
 </main>
-<footer>Made for two people to compare at their own pace. It is not a substitute for conversation or consent: a Yes here is only a conversation starter, and anyone can change their mind at any time.</footer>
+<footer>
+<p><a href="./compare.html" style="color:#5a9fd4">Open the Compare page</a> — upload both share files to see mutual Yes matches.</p>
+<p>Made for two people to compare at their own pace. It is not a substitute for conversation or consent: a Yes here is only a conversation starter, and anyone can change their mind at any time.</p>
+</footer>
 <script>
 (() => {
 'use strict';
@@ -398,7 +387,6 @@ function complementMap(items){
 }
 
 let state = loadState();
-let partner = null;
 let filterUnanswered = false;
 function fresh(){return {version:1,name:'',items:STARTER.map(x=>({...x})),answers:{},customComplements:[]}}
 function loadState(){try{const s=JSON.parse(localStorage.getItem(STORAGE_KEY));if(s&&s.version===1&&Array.isArray(s.items)&&s.answers){if(!Array.isArray(s.customComplements))s.customComplements=[];return s;}}catch(e){}return fresh()}
@@ -483,7 +471,7 @@ function render(){
    if(!ans || ans==='no'){
      state.items.filter(i=>i.parentId===id).forEach(ch=>{ delete state.answers[ch.id]; });
    }
-   save();render();renderMatches();
+   save();render();
  }));
  const visible=state.items.filter(i=>{
    if(!i.parentId) return true;
@@ -507,7 +495,7 @@ function download(obj,filename){
  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
 }
 function safeFilename(s){return (String(s||'person').toLowerCase().replace(/[^a-z0-9_-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,30)||'person')}
-function renderMatches(){
+function {
  const root=document.getElementById('matches');
  if(!partner){root.innerHTML='<div class="empty">Import a share file to compare answers. Mutual Yes matches and discussion topics will appear here.</div>';return}
  const ownAnswers=state.answers;
@@ -628,26 +616,13 @@ document.getElementById('addTopic').addEventListener('click',()=>{
   state.items.push({id:'custom_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8),category,text});
   document.getElementById('newTopic').value='';
  }
- save();render();renderMatches();
+ save();render();
 });
 document.getElementById('exportBtn').addEventListener('click',()=>{
  download(makeShare(),`green-light-share-${safeFilename(state.name)}.json`);
  setStatus('Share file downloaded. Share it only with your partner.','myProgress');
 });
-document.getElementById('partnerFile').addEventListener('change',async e=>{
- const file=e.target.files&&e.target.files[0];if(!file)return;
- try{
-  const data=JSON.parse(await file.text());
-  const knownApp=data.app==='Green Light'||data.app==='Green Light';
-  const validV1=knownApp&&data.version===1&&Array.isArray(data.items)&&Array.isArray(data.yesIds);
-  const validV2=knownApp&&data.version===2&&Array.isArray(data.items)&&data.answers&&typeof data.answers==='object'&&!Array.isArray(data.answers);
-  if(!validV1&&!validV2)throw new Error('This does not look like a valid Green Light share file.');
-  const ids=new Set(data.items.map(i=>i.id));
-  let importedAnswers={};
-  if(validV1){if(data.yesIds.some(id=>!ids.has(id)))throw new Error('The share file has inconsistent topic IDs.');data.yesIds.forEach(id=>importedAnswers[id]='yes');}
-  else {for(const [id,answer] of Object.entries(data.answers)){if(!ids.has(id)||!['yes','maybe','no'].includes(answer))throw new Error('The share file has inconsistent answer data.');importedAnswers[id]=answer;}}
-  const known=new Set(state.items.map(i=>i.id));
-  data.items.forEach(i=>{if(i&&typeof i.id==='string'&&typeof i.text==='string'&&!known.has(i.id)){state.items.push({id:i.id,category:String(i.category||'Imported topics'),text:i.text,parentId:i.parentId||null});known.add(i.id)}});
+known.add(i.id)}});
   if(Array.isArray(data.customComplements)){
     if(!state.customComplements) state.customComplements=[];
     const existing=new Set(state.customComplements.map(p=>[p[0],p[1]].sort().join('|').toLowerCase()));
@@ -658,18 +633,18 @@ document.getElementById('partnerFile').addEventListener('change',async e=>{
     });
   }
   save();partner={name:String(data.name||'Partner'),items:data.items,answers:importedAnswers};
-  setStatus('Share file loaded. Match groups are ready.','partnerStatus');render();renderMatches();
- }catch(err){partner=null;setStatus('Could not import file: '+err.message,'partnerStatus');renderMatches()}
+  setStatus('Share file loaded. Match groups are ready.','partnerStatus');render();
+ }catch(err){partner=null;setStatus('Could not import file: '+err.message,'partnerStatus');}
 });
-document.getElementById('clearPartner').addEventListener('click',()=>{partner=null;document.getElementById('partnerFile').value='';setStatus('','partnerStatus');renderMatches()});
-document.getElementById('showDifferent').addEventListener('change',renderMatches);
+
+
 document.getElementById('backupBtn').addEventListener('click',()=>download({app:'Green Light personal backup',version:1,state},`green-light-backup-${safeFilename(state.name)}.json`));
 document.getElementById('resetBtn').addEventListener('click',()=>{
  if(confirm('Erase all Only Yes data saved in this browser, including your answers and custom topics? Export a backup first if you might want it later.')){
-  localStorage.removeItem(STORAGE_KEY);state=fresh();partner=null;document.getElementById('partnerFile').value='';document.getElementById('search').value='';filterUnanswered=false;setStatus('','partnerStatus');render();renderMatches();
+  localStorage.removeItem(STORAGE_KEY);state=fresh();document.getElementById('search').value='';filterUnanswered=false;render();
  }
 });
-render();renderMatches();
+render();
 })();
 </script>
 </body>
