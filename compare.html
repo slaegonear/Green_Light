@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#121a22">
+<title>Green Light — Compare two share files</title>
+<style>
+:root{--ink:#e8eef4;--muted:#9aa8b8;--line:#2f3d4d;--paper:#1a2430;--bg:#121a22;--navy:#1e2d3d;--yes:#1a3d2e;--yesink:#7ddeb0;--maybe:#3d3420;--maybeink:#e0c45d;--no:#3d2020;--noink:#e5a2a2}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{background:#0d141c;color:white;padding:22px 16px;border-bottom:1px solid var(--line)}header .wrap,main{max-width:900px;margin:auto}h1{font-size:1.4rem;margin:0 0 5px;line-height:1.25}header p{margin:0;color:#a8b8c8}
+main{padding:16px;display:grid;gap:14px}.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 2px 12px #00000040}
+h3{font-size:1rem;margin:0 0 8px}.muted{color:var(--muted);font-size:.92rem}.small{font-size:.84rem}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row>*{flex:1 1 auto}
+button,input{font:inherit}button{border:1px solid var(--line);border-radius:9px;background:#243447;padding:9px 12px;cursor:pointer;color:var(--ink)}button:hover{filter:brightness(1.08)}button.primary{background:#3d6a94;color:white;border-color:#3d6a94}
+input[type=file]{border:1px solid var(--line);border-radius:9px;padding:10px;background:#121a22;color:var(--ink);width:100%}
+label{font-size:.88rem;font-weight:650;display:block;margin-bottom:5px}.field{flex:1 1 200px}
+.status{padding:10px 12px;border-radius:9px;background:#1e2d3d;color:var(--ink);margin-top:10px;white-space:pre-wrap}.status:empty{display:none}
+.match{padding:12px;border:1px solid #2a5c45;background:#152820;border-radius:10px;margin-top:8px}.match strong{display:block}.match .comp-note{font-size:.8rem;color:var(--muted);margin-top:2px}
+.empty{padding:16px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:10px}
+.pill{display:inline-block;background:#243447;padding:3px 8px;border-radius:999px;font-size:.8rem;color:var(--muted)}
+.file-tag{display:inline-block;margin-top:6px;font-size:.85rem;color:var(--muted)}
+footer{max-width:900px;margin:auto;padding:0 16px 24px;color:var(--muted);font-size:.82rem}
+a{color:#5a9fd4}
+@media(max-width:600px){main{padding:10px}.card{padding:13px}h1{font-size:1.2rem}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>Green Light — Compare</h1>
+<p>Upload two share files exported from Green Light. Comparison runs entirely in your browser. Results never show which file said Yes or No—only the overlap.</p>
+</div></header>
+<main>
+<section class="card">
+<h3>Share files</h3>
+<p class="muted small">Each person exports a share file from Green Light, then either of you can open this page and drop both files here. Nothing is uploaded to a server.</p>
+<div class="row" style="margin-top:12px">
+  <div class="field">
+    <label for="fileA">First share file (.json)</label>
+    <input id="fileA" type="file" accept=".json,application/json">
+    <div id="tagA" class="file-tag"></div>
+  </div>
+  <div class="field">
+    <label for="fileB">Second share file (.json)</label>
+    <input id="fileB" type="file" accept=".json,application/json">
+    <div id="tagB" class="file-tag"></div>
+  </div>
+</div>
+<div class="row" style="margin-top:12px">
+  <button id="compareBtn" class="primary" type="button">Compare</button>
+  <button id="clearBtn" type="button">Clear</button>
+</div>
+<label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-weight:500">
+  <input id="showDifferent" type="checkbox" style="width:auto"> Show different answers (Yes vs No)
+</label>
+<div id="status" class="status" aria-live="polite"></div>
+</section>
+
+<section class="card">
+<h3>Results</h3>
+<div id="results"><div class="empty">Load two Green Light share files and press Compare.</div></div>
+</section>
+</main>
+<footer>
+<p>Skipped questions in a share file count as No. Complementary give/receive pairs match automatically. This page does not store your files.</p>
+<p><a href="./index.html">Open the full Green Light list app</a> (if hosted together)</p>
+</footer>
+<script>
+(() => {
+'use strict';
+const COMPLEMENT_PAIRS = [
+  ['Sending a teasing photo (clothed or partially clothed)', 'Receiving a teasing photo (clothed or partially clothed)'],
+  ['Sending explicit photos or short videos', 'Receiving explicit photos or short videos'],
+  ['Giving oral (cunnilingus or fellatio)', 'Receiving oral'],
+  ['Oral to orgasm (giving)', 'Oral to orgasm (receiving)'],
+  ['Deepthroating (giving)', 'Being deepthroated (receiving)'],
+  ['Face-sitting / smothering – sitting on partner', 'Face-sitting / smothering – being sat on'],
+  ['Ass play with tongue (rimming – giving)', 'Ass play with tongue (rimming – receiving)'],
+  ['Kissing or licking feet', 'Having your feet kissed or licked'],
+  ['Using feet during sex / footjob (giving)', 'Footjob (receiving)'],
+  ['Anal sex (giving)', 'Anal sex (receiving)'],
+  ['Pegging (strap-on on a man) – giving', 'Pegging (strap-on on a man) – receiving'],
+  ['Giving a handjob / fingering with lots of focus', 'Receiving a handjob / fingering with lots of focus'],
+  ['Giving clear verbal direction (“harder”, “slower”, “right there”)', 'Being given clear verbal direction'],
+  ['Putting a blindfold on partner', 'Wearing a blindfold'],
+  ['Being tied spread-eagle on the bed', 'Tying the other person spread-eagle'],
+  ['Gag (ball gag, cloth, or hand) – giving', 'Being gagged'],
+  ['Putting a collar and leash on partner', 'Wearing a collar and leash'],
+  ['Butt plugs (wearing)', 'Butt plugs (having partner wear)'],
+  ['Controlling a remote toy on partner', 'Wearing a remote-controlled toy'],
+  ['Wearing a chastity cage', 'Keyholding / controlling a partner’s chastity cage'],
+  ['Spanking with hand (giving)', 'Spanking with hand (receiving)'],
+  ['Spanking with paddle, crop, or belt (giving)', 'Spanking with paddle, crop, or belt (receiving)'],
+  ['Flogging or whipping (giving)', 'Flogging or whipping (receiving)'],
+  ['Caning (giving)', 'Caning (receiving)'],
+  ['Hair pulling or face slapping (giving)', 'Hair pulling or face slapping (receiving)'],
+  ['Choking / breath play (giving) – high risk, research required', 'Choking / breath play (receiving) – high risk, research required'],
+  ['Nipple torture (giving)', 'Nipple torture (receiving)'],
+  ['CBT (giving)', 'CBT (receiving)'],
+  ['Giving orders during sex', 'Receiving orders during sex'],
+  ['Controlling partner’s orgasms / requiring permission', 'Having orgasms controlled / asking permission to cum'],
+  ['Forced orgasm / overstimulation (giving)', 'Forced orgasm / overstimulation (receiving)'],
+  ['Verbal degradation / humiliation (giving)', 'Verbal degradation / humiliation (receiving)'],
+  ['Pet play as owner / handler', 'Pet play as pet (puppy, kitten, etc.)'],
+  ['Being watched by a third person', 'Watching a partner with a third person present'],
+  ['Partner being with someone else while you watch (cuckold / hotwife)', 'Being with someone else while partner watches (cuckold / hotwife)']
+];
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function setStatus(msg){document.getElementById('status').textContent=msg||''}
+
+let dataA=null, dataB=null;
+
+function parseShare(raw, label){
+  let data;
+  try{ data=JSON.parse(raw); }catch(e){ throw new Error(label+': not valid JSON'); }
+  if(data.app!=='Green Light') throw new Error(label+': not a Green Light share file (app field)');
+  if(data.version!==2 || !Array.isArray(data.items) || !data.answers || typeof data.answers!=='object')
+    throw new Error(label+': unsupported or invalid share format');
+  const ids=new Set(data.items.map(i=>i.id));
+  for(const [id,ans] of Object.entries(data.answers)){
+    if(!ids.has(id) || !['yes','maybe','no'].includes(ans))
+      throw new Error(label+': inconsistent answer data');
+  }
+  return {
+    name: String(data.name||label),
+    items: data.items,
+    answers: data.answers,
+    customComplements: Array.isArray(data.customComplements)?data.customComplements:[]
+  };
+}
+
+function answerOf(side, id){
+  const a=side.answers[id];
+  return ['yes','maybe','no'].includes(a)?a:'no'; // missing = No
+}
+
+function complementMap(allItems, customA, customB){
+  const byText=new Map(allItems.map(i=>[i.text,i.id]));
+  const map=new Map();
+  const allPairs=COMPLEMENT_PAIRS.concat(customA||[], customB||[]);
+  for(const pair of allPairs){
+    if(!Array.isArray(pair)||pair.length<2) continue;
+    const idA=byText.get(pair[0]), idB=byText.get(pair[1]);
+    if(!idA||!idB) continue;
+    if(!map.has(idA)) map.set(idA,new Set());
+    if(!map.has(idB)) map.set(idB,new Set());
+    map.get(idA).add(idB);
+    map.get(idB).add(idA);
+  }
+  return map;
+}
+
+function runCompare(){
+  const root=document.getElementById('results');
+  if(!dataA||!dataB){
+    root.innerHTML='<div class="empty">Load two share files first.</div>';
+    return;
+  }
+  const merged=new Map();
+  dataA.items.forEach(i=>{ if(i&&i.id) merged.set(i.id,{id:i.id,category:i.category||'',text:i.text||i.id}); });
+  dataB.items.forEach(i=>{
+    if(!i||!i.id) return;
+    if(!merged.has(i.id)) merged.set(i.id,{id:i.id,category:i.category||'',text:i.text||i.id});
+  });
+  const all=[...merged.values()];
+  const comp=complementMap(all, dataA.customComplements, dataB.customComplements);
+
+  const exactYes=all.filter(i=>answerOf(dataA,i.id)==='yes'&&answerOf(dataB,i.id)==='yes');
+  const exactYesIds=new Set(exactYes.map(i=>i.id));
+
+  const compMatches=[];
+  const usedComp=new Set();
+  for(const i of all){
+    if(answerOf(dataA,i.id)!=='yes') continue;
+    const partners=comp.get(i.id);
+    if(!partners) continue;
+    for(const pid of partners){
+      if(answerOf(dataB,pid)!=='yes') continue;
+      const key=[i.id,pid].sort().join('|');
+      if(usedComp.has(key)) continue;
+      if(exactYesIds.has(i.id)&&exactYesIds.has(pid)) continue;
+      usedComp.add(key);
+      const other=merged.get(pid);
+      compMatches.push({
+        text: i.text+'  ↔  '+(other?other.text:pid),
+        category: i.category,
+        note: 'Complementary match (give ↔ receive)'
+      });
+    }
+  }
+
+  const discussExact=all.filter(i=>{
+    const a=answerOf(dataA,i.id), b=answerOf(dataB,i.id);
+    return (a==='maybe'||b==='maybe')&&!(a==='yes'&&b==='yes');
+  });
+  const discussComp=[];
+  const usedDiscuss=new Set();
+  for(const i of all){
+    const a=answerOf(dataA,i.id);
+    if(a!=='yes'&&a!=='maybe') continue;
+    const partners=comp.get(i.id);
+    if(!partners) continue;
+    for(const pid of partners){
+      const b=answerOf(dataB,pid);
+      if(b!=='yes'&&b!=='maybe') continue;
+      if(a==='yes'&&b==='yes') continue;
+      const key=[i.id,pid].sort().join('|');
+      if(usedDiscuss.has(key)||usedComp.has(key)) continue;
+      usedDiscuss.add(key);
+      const other=merged.get(pid);
+      discussComp.push({
+        text: i.text+'  ↔  '+(other?other.text:pid),
+        category: i.category,
+        note: 'Complementary — at least one Maybe'
+      });
+    }
+  }
+
+  const different=all.filter(i=>{
+    const a=answerOf(dataA,i.id), b=answerOf(dataB,i.id);
+    return (a==='yes'&&b==='no')||(a==='no'&&b==='yes');
+  });
+
+  const section=(title,items,empty)=>{
+    return `<section style="margin-top:14px"><h3>${title} <span class="pill">${items.length}</span></h3>${
+      items.length
+        ? items.map(i=>`<div class="match"><strong>${esc(i.text)}</strong><span class="muted">${esc(i.category||'')}</span>${i.note?`<div class="comp-note">${esc(i.note)}</div>`:''}</div>`).join('')
+        : `<div class="empty">${empty}</div>`
+    }</section>`;
+  };
+
+  const mutual=[...exactYes.map(i=>({text:i.text,category:i.category})), ...compMatches];
+  const discuss=[...discussExact.map(i=>({text:i.text,category:i.category})), ...discussComp];
+  const showDiff=document.getElementById('showDifferent').checked;
+
+  root.innerHTML =
+    section('Mutual Yes', mutual, 'No mutual Yes matches.') +
+    section('Worth discussing', discuss, 'No Maybe-related items.') +
+    (showDiff ? section('Different answers', different.map(i=>({text:i.text,category:i.category})), 'No Yes / No differences.') : '');
+
+  setStatus(`Compared “${dataA.name}” and “${dataB.name}”. ${mutual.length} mutual Yes · ${discuss.length} worth discussing` +
+    (showDiff ? ` · ${different.length} different` : '') +
+    '. Results do not show which file gave which answer.');
+}
+
+async function loadFile(input, side){
+  const file=input.files&&input.files[0];
+  if(!file){
+    if(side==='A'){ dataA=null; document.getElementById('tagA').textContent=''; }
+    else { dataB=null; document.getElementById('tagB').textContent=''; }
+    return;
+  }
+  try{
+    const raw=await file.text();
+    const parsed=parseShare(raw, file.name);
+    if(side==='A'){
+      dataA=parsed;
+      document.getElementById('tagA').textContent='Loaded: '+(parsed.name||file.name);
+    } else {
+      dataB=parsed;
+      document.getElementById('tagB').textContent='Loaded: '+(parsed.name||file.name);
+    }
+    setStatus('');
+  }catch(err){
+    if(side==='A'){ dataA=null; document.getElementById('tagA').textContent=''; }
+    else { dataB=null; document.getElementById('tagB').textContent=''; }
+    setStatus(err.message);
+  }
+}
+
+document.getElementById('fileA').addEventListener('change', e=>loadFile(e.target,'A'));
+document.getElementById('fileB').addEventListener('change', e=>loadFile(e.target,'B'));
+document.getElementById('compareBtn').addEventListener('click', runCompare);
+document.getElementById('showDifferent').addEventListener('change', ()=>{ if(dataA&&dataB) runCompare(); });
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  dataA=dataB=null;
+  document.getElementById('fileA').value='';
+  document.getElementById('fileB').value='';
+  document.getElementById('tagA').textContent='';
+  document.getElementById('tagB').textContent='';
+  document.getElementById('results').innerHTML='<div class="empty">Load two Green Light share files and press Compare.</div>';
+  setStatus('');
+});
+})();
+</script>
+</body>
+</html>
