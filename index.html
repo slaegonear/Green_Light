@@ -94,7 +94,7 @@ footer{max-width:900px;margin:auto;padding:0 16px 24px;color:var(--muted);font-s
 <section class="card">
 <details open>
 <summary>Answer topics</summary>
-<p class="muted small">Some sections start with an umbrella question. Answer Yes or Maybe to unlock the specific options underneath. A No hides them so you do not have to go through every variation.</p>
+<p class="muted small">Some sections start with an umbrella question. Answer 'Yes' or 'Maybe' to unlock the specific options underneath. A No hides them so you do not have to go through every variation.</p>
 <div id="topicList"></div>
 </details>
 </section>
@@ -390,7 +390,20 @@ function complementMap(items){
 let state = loadState();
 let filterUnanswered = false;
 function fresh(){return {version:1,name:'',items:STARTER.map(x=>({...x})),answers:{},customComplements:[]}}
-function loadState(){try{const s=JSON.parse(localStorage.getItem(STORAGE_KEY));if(s&&s.version===1&&Array.isArray(s.items)&&s.answers){if(!Array.isArray(s.customComplements))s.customComplements=[];return s;}}catch(e){}return fresh()}
+function loadState(){
+ try{
+  const s=JSON.parse(localStorage.getItem(STORAGE_KEY));
+  if(s&&s.version===1&&Array.isArray(s.items)&&s.answers){
+   if(!Array.isArray(s.customComplements))s.customComplements=[];
+   const customItems=s.items.filter(i=>!String(i.id||'').startsWith('starter_'));
+   const items=STARTER.map(x=>({...x})).concat(customItems);
+   const answers={};
+   items.forEach(i=>{if(['yes','maybe','no'].includes(s.answers[i.id]))answers[i.id]=s.answers[i.id];});
+   return {...s,items,answers};
+  }
+ }catch(e){}
+ return fresh();
+}
 function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){setStatus('Could not save to this browser. Export a backup before closing this tab.','myProgress')}}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function norm(s){return String(s||'').trim().toLowerCase()}
